@@ -10,6 +10,7 @@
 #include <QFutureWatcher>
 #include <QScopedPointer>
 #include <QStackedWidget>
+#include <QMutex>
 
 #include "imageprocessor.h"
 #include "animationmanager.h"
@@ -52,6 +53,7 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     // 文件
@@ -85,10 +87,14 @@ private slots:
     void onClearSelection();
     void onShowSelected();
     void onApplyFilter();
+    void onEnhanceImage();
+    void onRemoveWatermark();
 
     // 动画
     void onAnimationTypeChanged(int index);
     void onAnimationSpeedChanged(int value);
+    void onSoundEffectsToggled(bool checked);
+    void onBackgroundMusicToggled(bool checked);
 
     // 列表
     void onImageListItemClicked(QListWidgetItem *item);
@@ -101,6 +107,10 @@ private slots:
     void delayedUpdateGridView();
     void onImageLoaded(int index, QPixmap pixmap);
     void onScrollBarValueChanged();
+
+    // 增强完成
+    void onEnhancementFinished(const QPixmap &result);
+
 private:
     // 添加互斥锁保护共享资源
     QMutex m_gridMutex;
@@ -132,6 +142,8 @@ private:
     bool m_loopSlideshow = true;
     int m_slideshowInterval = 3000;
     bool m_randomOrder = false;
+    bool m_soundEffectsEnabled = true;
+    bool m_backgroundMusicEnabled = false;
     QVector<int> m_slideshowOrder;
 
     // 幻灯片 / 网格
@@ -140,6 +152,7 @@ private:
     QCache<QString, QPixmap> m_pixmapCache;
     QHash<int, QPixmap> m_gridPixmaps;
     QFutureWatcher<QPixmap> *m_imageLoader = nullptr;
+    QFutureWatcher<QPixmap> *m_enhancementLoader = nullptr;
     int m_lastVisibleRow = -1;
     int m_lastVisibleColumn = -1;
 
@@ -162,6 +175,11 @@ private:
     void updateStatusInfo();
     void showStatusMessage(const QString &message, int timeout = 5000);
     QPixmap loadPixmapForGrid(const QString &path, int width, int height);
+
+    // 音乐控制
+    void playBackgroundMusic();
+    void stopBackgroundMusic();
+    void toggleBackgroundMusic(bool enabled);
 
     Q_DISABLE_COPY(MainWindow)
 };

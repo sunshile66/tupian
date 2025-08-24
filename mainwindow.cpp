@@ -10,6 +10,8 @@
 #include <QGraphicsOpacityEffect>
 #include <QtConcurrent>
 #include <QStandardPaths>
+#include <QCloseEvent>
+#include <QMouseEvent>
 
 // ------------------ ClickableLabel ------------------
 ClickableLabel::ClickableLabel(QWidget* parent) : QLabel(parent) {
@@ -32,9 +34,11 @@ MainWindow::MainWindow(QWidget *parent)
     m_gridUpdateTimer(new QTimer(this)),
     m_pixmapCache(50 * 1024 * 1024), // 50MB缓存
     m_imageLoader(new QFutureWatcher<QPixmap>(this)),
-    m_isSwitchingView(false)  // 添加视图切换标志
+    m_enhancementLoader(new QFutureWatcher<QPixmap>(this)),
+    m_isSwitchingView(false)
 {
     ui->setupUi(this);
+
     initUI();
     initConnections();
     applyModernStyle();
@@ -45,24 +49,40 @@ MainWindow::MainWindow(QWidget *parent)
     ui->filterCombo->addItem("复古滤镜", ImageProcessor::SepiaFilter);
     ui->filterCombo->addItem("模糊滤镜", ImageProcessor::BlurFilter);
     ui->filterCombo->addItem("亮度调节", ImageProcessor::BrightnessFilter);
+    ui->filterCombo->addItem("对比度调节", ImageProcessor::ContrastFilter);
+    ui->filterCombo->addItem("锐化", ImageProcessor::SharpnessFilter);
+    ui->filterCombo->addItem("综合增强", ImageProcessor::EnhanceFilter);
+    ui->filterCombo->addItem("超分辨率", ImageProcessor::SuperResolutionFilter);
+    ui->filterCombo->addItem("去除水印", ImageProcessor::RemoveWatermarkFilter);
+
     connect(m_imageLoader, &QFutureWatcher<QPixmap>::finished, this, [this]() {
         // 清理已完成的任务
         m_imageLoader->disconnect();
     });
+
+    connect(m_enhancementLoader, &QFutureWatcher<QPixmap>::finished, this, [this]() {
+        if (m_enhancementLoader->isCanceled()) return;
+
+        QPixmap result = m_enhancementLoader->result();
+        if (!result.isNull()) {
+            m_currentPixmap = result;
+            updateImageDisplay();
+            statusBar()->showMessage("图片增强完成", 3000);
+        }
+    });
 }
 
 MainWindow::~MainWindow() {
-    // m_imageLoader->cancel();
-    // m_imageLoader->waitForFinished();
-    // ui是QScopedPointer，会自动删除，不需要手动删除
-    // / 停止所有动画和计时器
-            m_slideShowTimer->stop();
+    // 停止所有动画和计时器
+    m_slideShowTimer->stop();
     m_gridUpdateTimer->stop();
-    m_animationManager->deleteLater();
 
     // 取消异步加载
     m_imageLoader->cancel();
     m_imageLoader->waitForFinished();
+
+    m_enhancementLoader->cancel();
+    m_enhancementLoader->waitForFinished();
 
     // 清除所有缓存
     m_pixmapCache.clear();
@@ -83,6 +103,17 @@ void MainWindow::showEvent(QShowEvent *e) {
     }
 }
 
+void MainWindow::closeEvent(QCloseEvent *event) {
+    // 确保所有异步操作完成
+    m_imageLoader->cancel();
+    m_imageLoader->waitForFinished();
+
+    m_enhancementLoader->cancel();
+    m_enhancementLoader->waitForFinished();
+
+    event->accept();
+}
+
 // ------------------ UI Init ------------------
 void MainWindow::initUI() {
     setWindowTitle(QApplication::applicationName() + " v" + QApplication::applicationVersion());
@@ -100,6 +131,9 @@ void MainWindow::initUI() {
     ui->animationTypeCombo->addItem("旋转动画", AnimationManager::RotateAnimation);
     ui->animationTypeCombo->addItem("立方体旋转", AnimationManager::CubeAnimation);
     ui->animationTypeCombo->addItem("模糊过渡", AnimationManager::BlurAnimation);
+    ui->animationTypeCombo->addItem("发光效果", AnimationManager::GlowAnimation);
+    ui->animationTypeCombo->addItem("水滴效果", AnimationManager::WaterDropAnimation);
+    ui->animationTypeCombo->addItem("翻页效果", AnimationManager::PageCurlAnimation);
     ui->animationTypeCombo->setCurrentIndex(1);
 
     // 初始化视图模式下拉框
@@ -148,7 +182,7 @@ void MainWindow::initConnections() {
     connect(ui->rotateLeftBtn, &QPushButton::clicked, this, &MainWindow::onRotateLeft);
     connect(ui->rotateRightBtn, &QPushButton::clicked, this, &MainWindow::onRotateRight);
     connect(ui->slideShowBtn, &QPushButton::clicked, this, &MainWindow::onSlideshowToggle);
-    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::onClose); // 修改为pushButton
+    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::onClose);
 
     connect(ui->animationTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onAnimationTypeChanged);
@@ -188,6 +222,8 @@ void MainWindow::initConnections() {
             this, &MainWindow::onCheckUpdates);
     connect(ui->actionAbout, &QAction::triggered,
             this, &MainWindow::onAbout);
+    connect(ui->soundEffectsCheck, &QCheckBox::toggled, this, &MainWindow::onSoundEffectsToggled);
+    connect(ui->backgroundMusicCheck, &QCheckBox::toggled, this, &MainWindow::onBackgroundMusicToggled);
 }
 
 // ------------------ Core Slots ------------------
@@ -282,12 +318,10 @@ void MainWindow::onSlideshowToggle(){
     if (m_slideShowTimer->isActive()) {
         m_slideShowTimer->stop();
         ui->slideShowBtn->setText("开始播放");
-        ui->slideShowBtn->setIcon(QIcon(":/icons/play.png"));
         statusBar()->showMessage("幻灯片播放已停止", 3000);
     } else {
         m_slideShowTimer->start(m_slideshowInterval);
         ui->slideShowBtn->setText("停止播放");
-        ui->slideShowBtn->setIcon(QIcon(":/icons/pause.png"));
         statusBar()->showMessage("幻灯片播放已开始", 3000);
     }
 }
@@ -333,6 +367,31 @@ void MainWindow::onViewModeChanged(int index) {
 
     updateButtonStates();
     m_isSwitchingView = false;
+}
+
+void MainWindow::toggleBackgroundMusic(bool enabled)
+{
+    if (enabled) {
+        // 实现背景音乐播放逻辑
+        // 例如: m_mediaPlayer->play();
+        statusBar()->showMessage("背景音乐已开启", 2000);
+    } else {
+        // 实现背景音乐停止逻辑
+        // 例如: m_mediaPlayer->stop();
+        statusBar()->showMessage("背景音乐已关闭", 2000);
+    }
+}
+
+void MainWindow::onSoundEffectsToggled(bool checked)
+{
+    m_soundEffectsEnabled = checked;
+    m_animationManager->setSoundEnabled(checked);
+}
+
+void MainWindow::onBackgroundMusicToggled(bool checked)
+{
+    m_backgroundMusicEnabled = checked;
+    toggleBackgroundMusic(checked);
 }
 
 // ------------------ 新增的槽函数实现 ------------------
@@ -402,6 +461,10 @@ void MainWindow::onApplyFilter() {
         param = 5; // 默认模糊半径
     } else if (filterType == ImageProcessor::BrightnessFilter) {
         param = 30; // 默认亮度增加值
+    } else if (filterType == ImageProcessor::ContrastFilter) {
+        param = 20; // 默认对比度增加值
+    } else if (filterType == ImageProcessor::SharpnessFilter) {
+        param = 5; // 默认锐化强度
     }
 
     // 应用滤镜
@@ -411,6 +474,32 @@ void MainWindow::onApplyFilter() {
         updateImageDisplay();
         statusBar()->showMessage("滤镜已应用", 2000);
     }
+}
+
+void MainWindow::onEnhanceImage() {
+    if (m_currentPixmap.isNull()) return;
+
+    statusBar()->showMessage("正在增强图片...", 0);
+
+    // 异步增强图片
+    m_enhancementLoader->setFuture(
+        m_imageProcessor->enhanceImageAsync(m_currentPixmap, ImageProcessor::EnhanceColors, 70)
+        );
+}
+
+void MainWindow::onRemoveWatermark() {
+    if (m_currentPixmap.isNull()) return;
+
+    // 假设水印在右上角区域
+    QRect watermarkArea(m_currentPixmap.width() * 3/4, 0,
+                        m_currentPixmap.width()/4, m_currentPixmap.height()/4);
+
+    statusBar()->showMessage("正在去除水印...", 0);
+
+    // 异步去除水印
+    m_enhancementLoader->setFuture(
+        m_imageProcessor->removeWatermarkAsync(m_currentPixmap, watermarkArea)
+        );
 }
 
 void MainWindow::onImageListItemClicked(QListWidgetItem *item) {
@@ -434,7 +523,9 @@ void MainWindow::onAbout() {
                        "- 单图、网格、幻灯片三种视图模式\n"
                        "- 图片滤镜处理\n"
                        "- 图片缩放和旋转\n"
-                       "- 幻灯片自动播放");
+                       "- 幻灯片自动播放\n"
+                       "- 背景音乐和音效\n"
+                       "- 图片增强和去水印功能");
 }
 
 // ------------------ Slideshow ------------------
@@ -452,7 +543,6 @@ void MainWindow::updateSlideshow() {
         if (!m_loopSlideshow && m_currentImageIndex == 0) {
             m_slideShowTimer->stop();
             ui->slideShowBtn->setText("开始播放");
-            ui->slideShowBtn->setIcon(QIcon(":/icons/play.png"));
             statusBar()->showMessage("幻灯片播放已完成", 3000);
             return;
         }
@@ -634,6 +724,7 @@ void MainWindow::delayedUpdateGridView() {
         }
     }
 }
+
 void MainWindow::onImageLoaded(int index, QPixmap pixmap) {
     QMutexLocker locker(&m_gridMutex);
 
@@ -657,6 +748,7 @@ void MainWindow::onImageLoaded(int index, QPixmap pixmap) {
     label->setPixmap(pixmap.scaled(label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     label->setText("");
 }
+
 QPixmap MainWindow::loadPixmapForGrid(const QString &path, int width, int height) {
     // 检查缓存
     if (m_pixmapCache.contains(path)) {
@@ -854,4 +946,12 @@ void MainWindow::applyModernStyle() {
     )";
 
     this->setStyleSheet(styleSheet);
+}
+
+void MainWindow::onEnhancementFinished(const QPixmap &result) {
+    if (!result.isNull()) {
+        m_currentPixmap = result;
+        updateImageDisplay();
+        statusBar()->showMessage("图片增强完成", 3000);
+    }
 }

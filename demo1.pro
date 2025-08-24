@@ -1,4 +1,4 @@
-QT       += core gui network concurrent
+QT += core gui network concurrent multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -22,7 +22,8 @@ FORMS += \
     mainwindow.ui
 
 # 添加资源文件
-RESOURCES +=
+RESOURCES += \
+    resources.qrc
 
 # 发布配置
 win32 {

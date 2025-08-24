@@ -1,1 +1,11 @@
-<RCC/>
+<RCC>
+    <qresource prefix="/">
+        <file>sounds/click.wav</file>
+        <file>sounds/transition.mp3</file>
+        <file>sounds/background_music.mp3</file>
+        <file>icons/play.png</file>
+        <file>icons/pause.png</file>
+        <file>icons/next.png</file>
+        <file>icons/prev.png</file>
+    </qresource>
+</RCC>

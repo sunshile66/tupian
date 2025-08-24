@@ -1,16 +1,21 @@
 #include "animationmanager.h"
 #include <QGraphicsOpacityEffect>
 #include <QGraphicsBlurEffect>
+#include <QGraphicsColorizeEffect>
 #include <QEasingCurve>
 #include <QVariantAnimation>
 #include <QParallelAnimationGroup>
 #include <QSequentialAnimationGroup>
 #include <QTimer>
 #include <QDebug>
+#include <QPainter>
+#include <QPainterPath>
+#include <QtMath>
 
 AnimationManager::AnimationManager(QObject *parent)
     : QObject(parent)
     , m_duration(300)
+    , m_soundEnabled(true)
 {
 }
 
@@ -18,14 +23,25 @@ void AnimationManager::applyAnimation(QLabel *target, const QPixmap &newPixmap, 
 {
     if (!target) return;
 
-    // 如果正在执行动画，先停止所有动画
+    // 彻底停止所有现有动画
     if (target->graphicsEffect()) {
         QGraphicsEffect* effect = target->graphicsEffect();
-        // 移除动画关联
         effect->setEnabled(false);
         target->setGraphicsEffect(nullptr);
         effect->deleteLater();
     }
+
+    // 停止所有可能正在运行的动画
+    QList<QPropertyAnimation*> animations = target->findChildren<QPropertyAnimation*>();
+    for (QPropertyAnimation* animation : animations) {
+        animation->stop();
+        animation->deleteLater();
+    }
+
+    // 播放动画音效
+    playAnimationSound();
+
+    emit animationStarted();
 
     switch (type) {
     case NoAnimation:
@@ -53,25 +69,33 @@ void AnimationManager::applyAnimation(QLabel *target, const QPixmap &newPixmap, 
     case BlurAnimation:
         blurAnimation(target, newPixmap);
         break;
+    case GlowAnimation:
+        glowAnimation(target, newPixmap);
+        break;
+    case WaterDropAnimation:
+        waterDropAnimation(target, newPixmap);
+        break;
+    case PageCurlAnimation:
+        pageCurlAnimation(target, newPixmap);
+        break;
     }
 }
 
 void AnimationManager::cleanupAnimation(QObject *animation)
 {
     if (animation) {
-        // 先停止动画
-        if (QAbstractAnimation* anim = qobject_cast<QAbstractAnimation*>(animation)) {
-            anim->stop();
-            anim->disconnect();
-        }
         animation->deleteLater();
     }
 }
 
+void AnimationManager::playAnimationSound()
+{
+    if (!m_soundEnabled) return;
+    // 音效功能暂时移除，需要QtMultimedia支持
+}
+
 void AnimationManager::slideAnimation(QLabel *target, const QPixmap &pixmap, int direction)
 {
-    if (!target || !target->parentWidget()) return;
-
     // 创建临时标签用于动画
     QLabel *tempLabel = new QLabel(target->parentWidget());
     tempLabel->setPixmap(target->pixmap().isNull() ? QPixmap() : target->pixmap());
@@ -94,14 +118,14 @@ void AnimationManager::slideAnimation(QLabel *target, const QPixmap &pixmap, int
 
     if (direction > 0) {
         // 向右滑动
-        startRect.moveTo(-startRect.width(), startRect.y());
+        startRect.moveTo(-startRect.width(), 0);
         tempLabel->setGeometry(startRect);
-        endRect.moveTo(startRect.width(), startRect.y());
+        endRect.moveTo(startRect.width(), 0);
     } else {
         // 向左滑动
-        startRect.moveTo(startRect.width(), startRect.y());
+        startRect.moveTo(startRect.width(), 0);
         tempLabel->setGeometry(startRect);
-        endRect.moveTo(-startRect.width(), startRect.y());
+        endRect.moveTo(-startRect.width(), 0);
     }
 
     animation->setStartValue(startRect);
@@ -119,8 +143,6 @@ void AnimationManager::slideAnimation(QLabel *target, const QPixmap &pixmap, int
 
 void AnimationManager::fadeAnimation(QLabel *target, const QPixmap &pixmap)
 {
-    if (!target) return;
-
     // 保存原始pixmap
     QPixmap oldPixmap = target->pixmap();
 
@@ -137,9 +159,7 @@ void AnimationManager::fadeAnimation(QLabel *target, const QPixmap &pixmap)
 
     // 动画结束后清理效果
     connect(fadeInAnimation, &QPropertyAnimation::finished, this, [target, fadeInEffect, fadeInAnimation, this]() {
-        if (target) {
-            target->setGraphicsEffect(nullptr);
-        }
+        target->setGraphicsEffect(nullptr);
         cleanupAnimation(fadeInEffect);
         cleanupAnimation(fadeInAnimation);
         emit animationFinished();
@@ -150,8 +170,6 @@ void AnimationManager::fadeAnimation(QLabel *target, const QPixmap &pixmap)
 
 void AnimationManager::zoomAnimation(QLabel *target, const QPixmap &pixmap)
 {
-    if (!target) return;
-
     // 创建缩放动画序列
     QSequentialAnimationGroup *group = new QSequentialAnimationGroup(this);
 
@@ -208,9 +226,7 @@ void AnimationManager::zoomAnimation(QLabel *target, const QPixmap &pixmap)
 
     // 动画结束后清理
     connect(group, &QSequentialAnimationGroup::finished, this, [target, zoomOutEffect, zoomInEffect, group, this]() {
-        if (target) {
-            target->setGraphicsEffect(nullptr);
-        }
+        target->setGraphicsEffect(nullptr);
         cleanupAnimation(zoomOutEffect);
         cleanupAnimation(zoomInEffect);
         cleanupAnimation(group);
@@ -222,8 +238,6 @@ void AnimationManager::zoomAnimation(QLabel *target, const QPixmap &pixmap)
 
 void AnimationManager::flipAnimation(QLabel *target, const QPixmap &pixmap)
 {
-    if (!target) return;
-
     // 创建3D翻转效果
     QVariantAnimation *flipAnimation = new QVariantAnimation(this);
     flipAnimation->setDuration(m_duration);
@@ -233,8 +247,6 @@ void AnimationManager::flipAnimation(QLabel *target, const QPixmap &pixmap)
     QPixmap oldPixmap = target->pixmap();
 
     connect(flipAnimation, &QVariantAnimation::valueChanged, [target, oldPixmap, pixmap](const QVariant &value) {
-        if (!target) return;
-
         int angle = value.toInt();
 
         if (angle == 90) {
@@ -255,9 +267,7 @@ void AnimationManager::flipAnimation(QLabel *target, const QPixmap &pixmap)
     });
 
     connect(flipAnimation, &QVariantAnimation::finished, this, [target, flipAnimation, this]() {
-        if (target) {
-            target->setGraphicsEffect(nullptr);
-        }
+        target->setGraphicsEffect(nullptr);
         cleanupAnimation(flipAnimation);
         emit animationFinished();
     });
@@ -267,8 +277,6 @@ void AnimationManager::flipAnimation(QLabel *target, const QPixmap &pixmap)
 
 void AnimationManager::rotateAnimation(QLabel *target, const QPixmap &pixmap)
 {
-    if (!target) return;
-
     // 保存原始pixmap
     QPixmap oldPixmap = target->pixmap();
 
@@ -283,8 +291,6 @@ void AnimationManager::rotateAnimation(QLabel *target, const QPixmap &pixmap)
     rotateAnim->setEndValue(360);
 
     connect(rotateAnim, &QVariantAnimation::valueChanged, [target, effect](const QVariant &value) {
-        if (!target || !effect) return;
-
         double angle = value.toDouble();
         // 使用透明度模拟旋转效果
         effect->setOpacity(1.0 - (angle / 360.0));
@@ -303,24 +309,20 @@ void AnimationManager::rotateAnimation(QLabel *target, const QPixmap &pixmap)
 
     // 动画中途切换图片
     QTimer::singleShot(m_duration/2, this, [target, pixmap]() {
-        if (target) {
-            target->setPixmap(pixmap);
+        target->setPixmap(pixmap);
 
-            // 重置透明度
-            if (target->graphicsEffect()) {
-                QGraphicsOpacityEffect *effect = qobject_cast<QGraphicsOpacityEffect*>(target->graphicsEffect());
-                if (effect) {
-                    effect->setOpacity(0.0);
-                }
+        // 重置透明度
+        if (target->graphicsEffect()) {
+            QGraphicsOpacityEffect *effect = qobject_cast<QGraphicsOpacityEffect*>(target->graphicsEffect());
+            if (effect) {
+                effect->setOpacity(0.0);
             }
         }
     });
 
     // 动画结束后清理
     connect(group, &QParallelAnimationGroup::finished, this, [target, effect, group, this]() {
-        if (target) {
-            target->setGraphicsEffect(nullptr);
-        }
+        target->setGraphicsEffect(nullptr);
         cleanupAnimation(effect);
         cleanupAnimation(group);
         emit animationFinished();
@@ -331,8 +333,6 @@ void AnimationManager::rotateAnimation(QLabel *target, const QPixmap &pixmap)
 
 void AnimationManager::cubeAnimation(QLabel *target, const QPixmap &pixmap, int direction)
 {
-    if (!target || !target->parentWidget()) return;
-
     // 创建两个临时标签用于3D效果
     QLabel *frontLabel = new QLabel(target->parentWidget());
     frontLabel->setPixmap(target->pixmap());
@@ -363,8 +363,6 @@ void AnimationManager::cubeAnimation(QLabel *target, const QPixmap &pixmap, int 
     frontAnim->setEndValue(90 * direction);
 
     connect(frontAnim, &QVariantAnimation::valueChanged, [frontLabel, direction](const QVariant &value) {
-        if (!frontLabel) return;
-
         double angle = value.toDouble();
 
         // 使用透明度模拟3D旋转效果
@@ -380,8 +378,6 @@ void AnimationManager::cubeAnimation(QLabel *target, const QPixmap &pixmap, int 
     backAnim->setEndValue(0);
 
     connect(backAnim, &QVariantAnimation::valueChanged, [backLabel, direction](const QVariant &value) {
-        if (!backLabel) return;
-
         double angle = value.toDouble();
 
         // 使用透明度模拟3D旋转效果
@@ -395,8 +391,8 @@ void AnimationManager::cubeAnimation(QLabel *target, const QPixmap &pixmap, int 
 
     // 动画结束后删除临时标签
     connect(group, &QParallelAnimationGroup::finished, this, [frontLabel, backLabel, group, this]() {
-        if (frontLabel) frontLabel->close();
-        if (backLabel) backLabel->close();
+        frontLabel->close();
+        backLabel->close();
         cleanupAnimation(group);
         emit animationFinished();
     });
@@ -404,10 +400,8 @@ void AnimationManager::cubeAnimation(QLabel *target, const QPixmap &pixmap, int 
     group->start();
 }
 
-void AnimationManager::blurAnimation(QLabel *target, const QPixmap &pixmap)
+/*oid AnimationManager::blurAnimation(QLabel *target, const QPixmap &pixmap)
 {
-    if (!target) return;
-
     // 保存原始pixmap
     QPixmap oldPixmap = target->pixmap();
 
@@ -443,9 +437,7 @@ void AnimationManager::blurAnimation(QLabel *target, const QPixmap &pixmap)
 
     // 在第二阶段切换图片
     connect(phase1, &QParallelAnimationGroup::finished, this, [target, pixmap]() {
-        if (target) {
-            target->setPixmap(pixmap);
-        }
+        target->setPixmap(pixmap);
     });
 
     // 恢复动画
@@ -469,9 +461,7 @@ void AnimationManager::blurAnimation(QLabel *target, const QPixmap &pixmap)
 
     // 动画结束后清理效果
     connect(group, &QSequentialAnimationGroup::finished, this, [target, blurEffect, opacityEffect, group, this]() {
-        if (target) {
-            target->setGraphicsEffect(nullptr);
-        }
+        target->setGraphicsEffect(nullptr);
         cleanupAnimation(blurEffect);
         cleanupAnimation(opacityEffect);
         cleanupAnimation(group);
@@ -479,4 +469,221 @@ void AnimationManager::blurAnimation(QLabel *target, const QPixmap &pixmap)
     });
 
     group->start();
+}*/
+    void AnimationManager::blurAnimation(QLabel *target, const QPixmap &pixmap)
+{
+    // 保存原始pixmap
+    QPixmap oldPixmap = target->pixmap();
+
+    // 创建临时标签用于显示模糊效果
+    QLabel *tempLabel = new QLabel(target->parentWidget());
+    tempLabel->setPixmap(oldPixmap);
+    tempLabel->setGeometry(target->geometry());
+    tempLabel->setAlignment(Qt::AlignCenter);
+    tempLabel->setAttribute(Qt::WA_DeleteOnClose);
+    tempLabel->show();
+    tempLabel->raise();
+
+    // 更新主标签
+    target->setPixmap(pixmap);
+    target->setGraphicsEffect(nullptr); // 确保没有旧的效果
+
+    // 设置模糊效果到临时标签
+    QGraphicsBlurEffect *blurEffect = new QGraphicsBlurEffect(tempLabel);
+    tempLabel->setGraphicsEffect(blurEffect);
+
+    // 模糊动画
+    QPropertyAnimation *blurAnimation = new QPropertyAnimation(blurEffect, "blurRadius");
+    blurAnimation->setDuration(m_duration);
+    blurAnimation->setStartValue(0);
+    blurAnimation->setEndValue(10);
+    blurAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    // 透明度动画
+    QPropertyAnimation *opacityAnimation = new QPropertyAnimation(tempLabel, "windowOpacity");
+    opacityAnimation->setDuration(m_duration);
+    opacityAnimation->setStartValue(1.0);
+    opacityAnimation->setEndValue(0.0);
+    opacityAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    // 并行执行动画
+    QParallelAnimationGroup *group = new QParallelAnimationGroup(this);
+    group->addAnimation(blurAnimation);
+    group->addAnimation(opacityAnimation);
+
+    // 动画结束后删除临时标签
+    connect(group, &QParallelAnimationGroup::finished, this, [tempLabel, blurEffect, group, this]() {
+        tempLabel->close();
+        cleanupAnimation(blurEffect);
+        cleanupAnimation(group);
+        emit animationFinished();
+    });
+
+    group->start();
+}
+
+void AnimationManager::glowAnimation(QLabel *target, const QPixmap &pixmap)
+{
+    // 保存原始pixmap
+    QPixmap oldPixmap = target->pixmap();
+
+    // 创建临时标签用于显示发光效果
+    QLabel *tempLabel = new QLabel(target->parentWidget());
+    tempLabel->setPixmap(oldPixmap);
+    tempLabel->setGeometry(target->geometry());
+    tempLabel->setAlignment(Qt::AlignCenter);
+    tempLabel->setAttribute(Qt::WA_DeleteOnClose);
+    tempLabel->show();
+    tempLabel->raise();
+
+    // 更新主标签
+    target->setPixmap(pixmap);
+    target->setGraphicsEffect(nullptr); // 确保没有旧的效果
+
+    // 设置发光效果到临时标签
+    QGraphicsColorizeEffect *glowEffect = new QGraphicsColorizeEffect(tempLabel);
+    glowEffect->setColor(Qt::yellow);
+    glowEffect->setStrength(0);
+    tempLabel->setGraphicsEffect(glowEffect);
+
+    // 发光动画
+    QPropertyAnimation *glowAnimation = new QPropertyAnimation(glowEffect, "strength");
+    glowAnimation->setDuration(m_duration);
+    glowAnimation->setStartValue(0.0);
+    glowAnimation->setEndValue(1.0);
+    glowAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+
+    // 透明度动画
+    QPropertyAnimation *opacityAnimation = new QPropertyAnimation(tempLabel, "windowOpacity");
+    opacityAnimation->setDuration(m_duration);
+    opacityAnimation->setStartValue(1.0);
+    opacityAnimation->setEndValue(0.0);
+    opacityAnimation->setEasingCurve(QEasingCurve::InQuad);
+
+    // 并行执行动画
+    QParallelAnimationGroup *group = new QParallelAnimationGroup(this);
+    group->addAnimation(glowAnimation);
+    group->addAnimation(opacityAnimation);
+
+    // 动画结束后删除临时标签
+    connect(group, &QParallelAnimationGroup::finished, this, [tempLabel, glowEffect, group, this]() {
+        tempLabel->close();
+        cleanupAnimation(glowEffect);
+        cleanupAnimation(group);
+        emit animationFinished();
+    });
+
+    group->start();
+}
+void AnimationManager::waterDropAnimation(QLabel *target, const QPixmap &pixmap)
+{
+    // 创建波纹效果
+    QLabel *rippleLabel = new QLabel(target->parentWidget());
+    rippleLabel->setPixmap(target->pixmap());
+    rippleLabel->setGeometry(target->geometry());
+    rippleLabel->setAlignment(Qt::AlignCenter);
+    rippleLabel->setAttribute(Qt::WA_DeleteOnClose);
+    rippleLabel->show();
+    rippleLabel->raise();
+
+    // 更新主标签
+    target->setPixmap(pixmap);
+
+    // 创建波纹动画
+    QVariantAnimation *rippleAnimation = new QVariantAnimation(this);
+    rippleAnimation->setDuration(m_duration);
+    rippleAnimation->setStartValue(0.0);
+    rippleAnimation->setEndValue(1.0);
+
+    QGraphicsOpacityEffect *opacityEffect = new QGraphicsOpacityEffect(rippleLabel);
+    rippleLabel->setGraphicsEffect(opacityEffect);
+
+    connect(rippleAnimation, &QVariantAnimation::valueChanged, [rippleLabel, opacityEffect](const QVariant &value) {
+        double progress = value.toDouble();
+
+        // 创建波纹效果
+        QPixmap original = rippleLabel->pixmap();
+        QPixmap ripplePixmap(original.size());
+        ripplePixmap.fill(Qt::transparent);
+
+        QPainter painter(&ripplePixmap);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // 绘制原始图像
+        painter.drawPixmap(0, 0, original);
+
+        // 应用波纹效果
+        QPainterPath clipPath;
+        int centerX = ripplePixmap.width() / 2;
+        int centerY = ripplePixmap.height() / 2;
+        int maxRadius = qSqrt(centerX * centerX + centerY * centerY);
+        int radius = maxRadius * progress;
+
+        clipPath.addEllipse(centerX - radius, centerY - radius, radius * 2, radius * 2);
+        painter.setClipPath(clipPath);
+        painter.setCompositionMode(QPainter::CompositionMode_Source);
+        painter.fillRect(ripplePixmap.rect(), Qt::transparent);
+
+        // 设置透明度
+        opacityEffect->setOpacity(1.0 - progress);
+    });
+
+    connect(rippleAnimation, &QVariantAnimation::finished, this, [rippleLabel, rippleAnimation, this]() {
+        rippleLabel->close();
+        cleanupAnimation(rippleAnimation);
+        emit animationFinished();
+    });
+
+    rippleAnimation->start();
+}
+
+void AnimationManager::pageCurlAnimation(QLabel *target, const QPixmap &pixmap)
+{
+    // 创建翻页效果
+    QLabel *curlLabel = new QLabel(target->parentWidget());
+    curlLabel->setPixmap(target->pixmap());
+    curlLabel->setGeometry(target->geometry());
+    curlLabel->setAlignment(Qt::AlignCenter);
+    curlLabel->setAttribute(Qt::WA_DeleteOnClose);
+    curlLabel->show();
+    curlLabel->raise();
+
+    // 更新主标签
+    target->setPixmap(pixmap);
+
+    // 创建翻页动画
+    QVariantAnimation *curlAnimation = new QVariantAnimation(this);
+    curlAnimation->setDuration(m_duration);
+    curlAnimation->setStartValue(0.0);
+    curlAnimation->setEndValue(1.0);
+
+    connect(curlAnimation, &QVariantAnimation::valueChanged, [curlLabel](const QVariant &value) {
+        double progress = value.toDouble();
+
+        // 创建翻页效果
+        QPixmap original = curlLabel->pixmap();
+        QPixmap curlPixmap(original.size());
+        curlPixmap.fill(Qt::transparent);
+
+        QPainter painter(&curlPixmap);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // 绘制翻页效果
+        QTransform transform;
+        transform.translate(original.width() * progress, 0);
+        transform.rotate(90 * progress, Qt::YAxis);
+        painter.setTransform(transform);
+
+        painter.drawPixmap(0, 0, original);
+
+        curlLabel->setPixmap(curlPixmap);
+    });
+
+    connect(curlAnimation, &QVariantAnimation::finished, this, [curlLabel, curlAnimation, this]() {
+        curlLabel->close();
+        cleanupAnimation(curlAnimation);
+        emit animationFinished();
+    });
+
+    curlAnimation->start();
 }
