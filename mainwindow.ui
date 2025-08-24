@@ -1,0 +1,708 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1400</width>
+    <height>900</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>高级图片浏览器</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QHBoxLayout" name="mainControlLayout">
+      <item>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="browseTab">
+         <attribute name="title">
+          <string>浏览</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <layout class="QHBoxLayout" name="controlLayout">
+            <item>
+             <widget class="QPushButton" name="showImageBtn">
+              <property name="text">
+               <string>加载图片</string>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="prevBtn">
+              <property name="text">
+               <string>上一张</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="nextBtn">
+              <property name="text">
+               <string>下一张</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="zoomInBtn">
+              <property name="text">
+               <string>放大</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="zoomOutBtn">
+              <property name="text">
+               <string>缩小</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="rotateLeftBtn">
+              <property name="text">
+               <string>左旋转</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="rotateRightBtn">
+              <property name="text">
+               <string>右旋转</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="slideShowBtn">
+              <property name="text">
+               <string>幻灯片播放</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton">
+              <property name="text">
+               <string>关闭窗口</string>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="animationControlLayout">
+            <item>
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>动画类型:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="animationTypeCombo">
+              <property name="minimumSize">
+               <size>
+                <width>120</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>动画速度:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSlider" name="animationSpeedSlider">
+              <property name="minimumSize">
+               <size>
+                <width>150</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+              <property name="minimum">
+               <number>100</number>
+              </property>
+              <property name="value">
+               <number>300</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="animationSpeedLabel">
+              <property name="text">
+               <string>300ms</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>视图模式:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="viewModeCombo">
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QGroupBox" name="imageContainer">
+              <property name="title">
+               <string>图片预览</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QLabel" name="imageLabel">
+                 <property name="text">
+                  <string>请加载图片</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="scaledContents">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>600</width>
+                   <height>400</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="imageListGroup">
+              <property name="title">
+               <string>图片列表</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <item>
+                <widget class="QListWidget" name="imageListWidget">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>250</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::SingleSelection</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QCheckBox" name="selectionModeCheck">
+                   <property name="text">
+                    <string>选择模式</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="selectionActionsWidget" native="true">
+                   <layout class="QHBoxLayout" name="horizontalLayout_4">
+                    <item>
+                     <widget class="QPushButton" name="selectAllBtn">
+                      <property name="text">
+                       <string>全选</string>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>25</height>
+                       </size>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="clearSelectionBtn">
+                      <property name="text">
+                       <string>清除选择</string>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>25</height>
+                       </size>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="showSelectedBtn">
+                      <property name="text">
+                       <string>显示选中</string>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>25</height>
+                       </size>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="gridViewTab">
+         <attribute name="title">
+          <string>网格视图</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>网格列数:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="gridColumnsSpin">
+              <property name="minimum">
+               <number>2</number>
+              </property>
+              <property name="maximum">
+               <number>6</number>
+              </property>
+              <property name="value">
+               <number>3</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QScrollArea" name="scrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="scrollAreaWidgetContents">
+             <layout class="QGridLayout" name="gridLayout"/>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="slideshowTab">
+         <attribute name="title">
+          <string>幻灯片设置</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>播放间隔:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="slideshowIntervalSpin">
+              <property name="suffix">
+               <string>毫秒</string>
+              </property>
+              <property name="minimum">
+               <number>1000</number>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+              <property name="value">
+               <number>3000</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <item>
+             <widget class="QCheckBox" name="loopSlideshowCheck">
+              <property name="text">
+               <string>循环播放</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="randomOrderCheck">
+              <property name="text">
+               <string>随机顺序</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>幻灯片视图模式下，图片将自动切换播放</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="filtersTab">
+         <attribute name="title">
+          <string>滤镜效果</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <item>
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>选择滤镜:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="filterCombo">
+              <property name="minimumSize">
+               <size>
+                <width>120</width>
+                <height>30</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="applyFilterBtn">
+              <property name="text">
+               <string>应用滤镜</string>
+              </property>
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>应用滤镜后将创建图片的副本，原图不受影响</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="updatesTab">
+         <attribute name="title">
+          <string>更新</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>当前版本: 1.0.0</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="checkUpdatesBtn">
+            <property name="text">
+             <string>检查更新</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="updateStatusLabel">
+            <property name="text">
+             <string>就绪</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="statusLabel">
+      <property name="text">
+       <string>就绪</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1400</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="actionOpen"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>视图</string>
+    </property>
+    <addaction name="actionSingleView"/>
+    <addaction name="actionGridView"/>
+    <addaction name="actionSlideshow"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>帮助</string>
+    </property>
+    <addaction name="actionCheckUpdates"/>
+    <addaction name="separator"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionOpen">
+   <property name="text">
+    <string>打开图片</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>退出</string>
+   </property>
+  </action>
+  <action name="actionSingleView">
+   <property name="text">
+    <string>单图视图</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionGridView">
+   <property name="text">
+    <string>网格视图</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSlideshow">
+   <property name="text">
+    <string>幻灯片视图</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionCheckUpdates">
+   <property name="text">
+    <string>检查更新</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>关于</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
